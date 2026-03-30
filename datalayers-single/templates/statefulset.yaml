@@ -50,6 +50,20 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
+            - name: DATALAYERS_SERVER__AUTH__TYPE
+              value: {{ $.Values.auth.type | quote }}
+            {{- if eq $.Values.auth.type "static" }}
+            - name: DATALAYERS_SERVER__AUTH__USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "datalayers-single.authSecretName" $ }}
+                  key: {{ $.Values.auth.static.secretKeys.username }}
+            - name: DATALAYERS_SERVER__AUTH__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "datalayers-single.authSecretName" $ }}
+                  key: {{ $.Values.auth.static.secretKeys.password }}
+            {{- end }}
           {{- end }}
           ports:
             - name: grpc

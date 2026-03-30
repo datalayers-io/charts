@@ -1,3 +1,4 @@
+{{- if eq .Values.auth.type "static" }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,16 +11,19 @@ spec:
   containers:
     - name: dlsql
       image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-      command: ['dlsql']
+      command: ['sh', '-c']
       args:
-        - '-h'
-        - '{{ include "datalayers-single.fullname" . }}'
-        - '-P'
-        - '{{ .Values.service.grpc.port }}'
-        - '-u'
-        - 'admin'
-        - '-p'
-        - 'public'
-        - '-e'
-        - 'SHOW DATABASES'
+        - 'dlsql -h {{ include "datalayers-single.fullname" . }} -P {{ .Values.service.grpc.port }} -u "$DL_USERNAME" -p "$DL_PASSWORD" -e "SHOW DATABASES"'
+      env:
+        - name: DL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalayers-single.authSecretName" . }}
+              key: {{ .Values.auth.static.secretKeys.username }}
+        - name: DL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalayers-single.authSecretName" . }}
+              key: {{ .Values.auth.static.secretKeys.password }}
   restartPolicy: Never
+{{- end }}

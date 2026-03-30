@@ -60,3 +60,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Return the auth secret name
+*/}}
+{{- define "datalayers-single.authSecretName" -}}
+{{- if .Values.auth.static.existingSecret }}
+{{- .Values.auth.static.existingSecret }}
+{{- else }}
+{{- printf "%s-auth" (include "datalayers-single.fullname" .) }}
+{{- end }}
+{{- end }}

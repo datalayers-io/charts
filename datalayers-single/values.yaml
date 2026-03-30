@@ -25,6 +25,20 @@ securityContext: {}
 env:
   DATALAYERS_SERVER__STANDALONE: "true"
 
+# Authentication configuration.
+auth:
+  # "static" or "rbac"
+  type: "static"
+  static:
+    username: "admin"
+    password: "public"
+    # Use an existing Secret instead of creating one.
+    # The Secret must contain keys matching secretKeys below.
+    existingSecret: ""
+    secretKeys:
+      username: "username"
+      password: "password"
+
 service:
   type: ClusterIP
   grpc:
