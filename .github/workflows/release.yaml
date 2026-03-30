@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '*-[0-9]+.[0-9]+.[0-9]+*'
+      - '**'
 
 jobs:
   release:
@@ -17,6 +17,11 @@ jobs:
         id: meta
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
+          # Validate tag format: <chart>-<semver>
+          if ! echo "$TAG" | grep -qE '^.+-[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'; then
+            echo "::error::Tag '$TAG' does not match expected format: <chart>-<version>"
+            exit 1
+          fi
           # Extract version: semver with optional pre-release suffix
           VERSION=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-.+)?$')
           # Chart name is everything before the version
