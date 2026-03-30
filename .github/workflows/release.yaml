@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '*-[0-9]+.[0-9]+.[0-9]+'
+      - '*-[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
   release:
@@ -17,13 +17,19 @@ jobs:
         id: meta
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          # Extract version (last 3 dot-separated numbers)
-          VERSION=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+$')
+          # Extract version: semver with optional pre-release suffix
+          VERSION=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-.+)?$')
           # Chart name is everything before the version
           CHART=$(echo "$TAG" | sed "s/-${VERSION}$//")
           echo "chart=$CHART" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Mark as pre-release if version contains a hyphen
+          if echo "$VERSION" | grep -q '-'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
           echo "Chart: $CHART, Version: $VERSION"
 
       - name: Validate chart exists
@@ -48,4 +54,5 @@ jobs:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: ${{ steps.meta.outputs.chart }} ${{ steps.meta.outputs.version }}
           files: ${{ steps.meta.outputs.chart }}-${{ steps.meta.outputs.version }}.tgz
+          prerelease: ${{ steps.meta.outputs.prerelease }}
           generate_release_notes: true
