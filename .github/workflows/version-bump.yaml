@@ -1,4 +1,4 @@
-name: Version Bump
+name: Version Bump & Release
 
 on:
   workflow_dispatch:
@@ -30,10 +30,17 @@ jobs:
             exit 1
           fi
 
+      - name: Check tag does not already exist
+        run: |
+          TAG="${{ inputs.chart }}-${{ inputs.version }}"
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "::error::Tag '$TAG' already exists"
+            exit 1
+          fi
+
       - name: Update Chart.yaml version
         run: |
           sed -i "s/^version: .*/version: ${{ inputs.version }}/" "${{ inputs.chart }}/Chart.yaml"
-          echo "Updated ${{ inputs.chart }}/Chart.yaml:"
           grep '^version:' "${{ inputs.chart }}/Chart.yaml"
 
       - name: Commit and tag
@@ -41,6 +48,34 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "${{ inputs.chart }}/Chart.yaml"
-          git commit -m "chore(${{ inputs.chart }}): bump version to ${{ inputs.version }}"
+          git diff --cached --quiet && echo "Chart.yaml already at version ${{ inputs.version }}" || \
+            git commit -m "chore(${{ inputs.chart }}): bump version to ${{ inputs.version }}"
           git tag "${{ inputs.chart }}-${{ inputs.version }}"
           git push origin main --tags
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint chart
+        run: helm lint ${{ inputs.chart }}/
+
+      - name: Package chart
+        run: helm package ${{ inputs.chart }}/
+
+      - name: Determine pre-release
+        id: meta
+        run: |
+          if echo "${{ inputs.version }}" | grep -q '-'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.chart }}-${{ inputs.version }}
+          name: ${{ inputs.chart }} ${{ inputs.version }}
+          files: ${{ inputs.chart }}-${{ inputs.version }}.tgz
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          generate_release_notes: true
