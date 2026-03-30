@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -79,3 +80,8 @@ jobs:
           files: ${{ inputs.chart }}-${{ inputs.version }}.tgz
           prerelease: ${{ steps.meta.outputs.prerelease }}
           generate_release_notes: true
+
+      - name: Push chart to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+          helm push ${{ inputs.chart }}-${{ inputs.version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
