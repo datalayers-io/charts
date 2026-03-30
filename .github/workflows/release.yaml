@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*-[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse chart name and version from tag
+        id: meta
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Extract version (last 3 dot-separated numbers)
+          VERSION=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+$')
+          # Chart name is everything before the version
+          CHART=$(echo "$TAG" | sed "s/-${VERSION}$//")
+          echo "chart=$CHART" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Chart: $CHART, Version: $VERSION"
+
+      - name: Validate chart exists
+        run: |
+          if [ ! -f "${{ steps.meta.outputs.chart }}/Chart.yaml" ]; then
+            echo "::error::Chart '${{ steps.meta.outputs.chart }}' not found"
+            exit 1
+          fi
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint chart
+        run: helm lint ${{ steps.meta.outputs.chart }}/
+
+      - name: Package chart
+        run: helm package ${{ steps.meta.outputs.chart }}/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.chart }} ${{ steps.meta.outputs.version }}
+          files: ${{ steps.meta.outputs.chart }}-${{ steps.meta.outputs.version }}.tgz
+          generate_release_notes: true

@@ -1,0 +1,100 @@
+replicaCount: 1
+
+image:
+  repository: datalayers/datalayers
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+
+# Environment variables passed to the Datalayers container.
+env:
+  DATALAYERS_SERVER__STANDALONE: "true"
+
+service:
+  type: ClusterIP
+  grpc:
+    port: 8360
+  http:
+    port: 8361
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: datalayers.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+    - name: gateway
+      sectionName: http
+  hostnames:
+    - datalayers.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+# Persistent volume claims for data and log directories.
+# storageClass must be set explicitly if the cluster has no default StorageClass.
+# Examples: "alicloud-disk-essd", "standard", "gp2"
+persistence:
+  data:
+    size: 20Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+  log:
+    size: 20Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+resources: {}
+
+livenessProbe:
+  httpGet:
+    path: /ping
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ping
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Optional: provide a full datalayers.toml to mount as /etc/datalayers/datalayers.toml.
+# When empty (default), Datalayers uses its built-in defaults + env var overrides.
+# Only set this when you need config that env vars cannot express (e.g. TLS certs, storage backends).
+# datalayersConfig: |
+#   base_dir = "/var/lib/datalayers"
+#   [server]
+#   standalone = true
+#   ...

@@ -1,0 +1,12 @@
+Datalayers has been deployed in standalone mode.
+
+Service ports:
+  - gRPC (FlightSQL): {{ .Values.service.grpc.port }}
+  - HTTP API:         {{ .Values.service.http.port }}
+
+To connect from within the cluster:
+  gRPC: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.grpc.port }}
+  HTTP: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.http.port }}
+
+To port-forward for local access:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "datalayers-single.fullname" . }} {{ .Values.service.grpc.port }}:{{ .Values.service.grpc.port }} {{ .Values.service.http.port }}:{{ .Values.service.http.port }}

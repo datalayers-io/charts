@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "datalayers-single.fullname" . }}
+  labels:
+    {{- include "datalayers-single.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "datalayers-single.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalayers-single.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if or .Values.datalayersConfig .Values.podAnnotations }}
+      annotations:
+        {{- if .Values.datalayersConfig }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      labels:
+        {{- include "datalayers-single.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "datalayers-single.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: grpc
+              containerPort: 8360
+              protocol: TCP
+            - name: http
+              containerPort: 8361
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .Values.datalayersConfig }}
+            - name: config
+              mountPath: /etc/datalayers/datalayers.toml
+              subPath: datalayers.toml
+              readOnly: true
+            {{- end }}
+            - name: data
+              mountPath: /var/lib/datalayers
+            - name: log
+              mountPath: /var/log/datalayers
+      {{- if .Values.datalayersConfig }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "datalayers-single.fullname" . }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          {{- include "datalayers-single.labels" . | nindent 10 }}
+      spec:
+        accessModes:
+          - {{ .Values.persistence.data.accessMode }}
+        {{- with .Values.persistence.data.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.data.size }}
+    - metadata:
+        name: log
+        labels:
+          {{- include "datalayers-single.labels" . | nindent 10 }}
+      spec:
+        accessModes:
+          - {{ .Values.persistence.log.accessMode }}
+        {{- with .Values.persistence.log.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.log.size }}

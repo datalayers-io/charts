@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "datalayers-single.fullname" . }}-test-connection"
+  labels:
+    {{- include "datalayers-single.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: dlsql
+      image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+      command: ['dlsql']
+      args:
+        - '-h'
+        - '{{ include "datalayers-single.fullname" . }}'
+        - '-P'
+        - '{{ .Values.service.grpc.port }}'
+        - '-u'
+        - 'admin'
+        - '-p'
+        - 'public'
+        - '-e'
+        - 'SHOW DATABASES'
+  restartPolicy: Never
