@@ -57,15 +57,11 @@ httpRoute:
             type: PathPrefix
             value: /
 
-# Persistent volume claims for data and log directories.
+# Persistent volume claim for data directory.
 # storageClass must be set explicitly if the cluster has no default StorageClass.
 # Examples: "alicloud-disk-essd", "standard", "gp2"
 persistence:
   data:
-    size: 20Gi
-    storageClass: ""
-    accessMode: ReadWriteOnce
-  log:
     size: 20Gi
     storageClass: ""
     accessMode: ReadWriteOnce

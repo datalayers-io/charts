@@ -79,8 +79,6 @@ spec:
             {{- end }}
             - name: data
               mountPath: /var/lib/datalayers
-            - name: log
-              mountPath: /var/log/datalayers
       {{- if .Values.datalayersConfig }}
       volumes:
         - name: config
@@ -113,16 +111,3 @@ spec:
         resources:
           requests:
             storage: {{ .Values.persistence.data.size }}
-    - metadata:
-        name: log
-        labels:
-          {{- include "datalayers-single.labels" . | nindent 10 }}
-      spec:
-        accessModes:
-          - {{ .Values.persistence.log.accessMode }}
-        {{- with .Values.persistence.log.storageClass }}
-        storageClassName: {{ . }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ .Values.persistence.log.size }}
