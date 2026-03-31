@@ -25,6 +25,14 @@ securityContext: {}
 env:
   DATALAYERS_SERVER__STANDALONE: "true"
 
+# Inject all keys from Secrets or ConfigMaps as environment variables.
+# envFrom:
+#   - secretRef:
+#       name: my-datalayers-secret
+#   - configMapRef:
+#       name: my-datalayers-config
+envFrom: []
+
 # Authentication configuration.
 auth:
   # "static" or "rbac"
