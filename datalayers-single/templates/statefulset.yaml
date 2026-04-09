@@ -68,6 +68,28 @@ spec:
                   name: {{ include "datalayers-single.authSecretName" $ }}
                   key: {{ $.Values.auth.static.secretKeys.password }}
             {{- end }}
+            {{- if $.Values.service.postgres.enabled }}
+            - name: DATALAYERS_SERVER__POSTGRES__ADDR
+              value: "0.0.0.0:5432"
+            {{- end }}
+            {{- if $.Values.service.redis.enabled }}
+            - name: DATALAYERS_SERVER__REDIS__ADDR
+              value: "0.0.0.0:6379"
+            - name: DATALAYERS_SERVER__REDIS__USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "datalayers-single.authSecretName" $ }}
+                  key: {{ $.Values.auth.static.secretKeys.username }}
+            - name: DATALAYERS_SERVER__REDIS__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "datalayers-single.authSecretName" $ }}
+                  key: {{ $.Values.auth.static.secretKeys.password }}
+            {{- end }}
+            {{- if $.Values.service.prometheus.enabled }}
+            - name: DATALAYERS_SERVER__PROMETHEUS__ADDR
+              value: "0.0.0.0:9090"
+            {{- end }}
           {{- end }}
           ports:
             - name: grpc
@@ -76,6 +98,21 @@ spec:
             - name: http
               containerPort: 8361
               protocol: TCP
+            {{- if .Values.service.postgres.enabled }}
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.service.redis.enabled }}
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.service.prometheus.enabled }}
+            - name: prometheus
+              containerPort: 9090
+              protocol: TCP
+            {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}

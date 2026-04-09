@@ -3,10 +3,28 @@ Datalayers has been deployed in standalone mode.
 Service ports:
   - gRPC (FlightSQL): {{ .Values.service.grpc.port }}
   - HTTP API:         {{ .Values.service.http.port }}
+{{- if .Values.service.postgres.enabled }}
+  - PostgreSQL:       {{ .Values.service.postgres.port }}
+{{- end }}
+{{- if .Values.service.redis.enabled }}
+  - Redis:            {{ .Values.service.redis.port }}
+{{- end }}
+{{- if .Values.service.prometheus.enabled }}
+  - Prometheus:       {{ .Values.service.prometheus.port }}
+{{- end }}
 
 To connect from within the cluster:
   gRPC: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.grpc.port }}
   HTTP: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.http.port }}
+{{- if .Values.service.postgres.enabled }}
+  PostgreSQL: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.postgres.port }}
+{{- end }}
+{{- if .Values.service.redis.enabled }}
+  Redis: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.redis.port }}
+{{- end }}
+{{- if .Values.service.prometheus.enabled }}
+  Prometheus: {{ include "datalayers-single.fullname" . }}:{{ .Values.service.prometheus.port }}
+{{- end }}
 
 To port-forward for local access:
-  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "datalayers-single.fullname" . }} {{ .Values.service.grpc.port }}:{{ .Values.service.grpc.port }} {{ .Values.service.http.port }}:{{ .Values.service.http.port }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "datalayers-single.fullname" . }} {{ .Values.service.grpc.port }}:{{ .Values.service.grpc.port }} {{ .Values.service.http.port }}:{{ .Values.service.http.port }}{{ if .Values.service.postgres.enabled }} {{ .Values.service.postgres.port }}:{{ .Values.service.postgres.port }}{{ end }}{{ if .Values.service.redis.enabled }} {{ .Values.service.redis.port }}:{{ .Values.service.redis.port }}{{ end }}{{ if .Values.service.prometheus.enabled }} {{ .Values.service.prometheus.port }}:{{ .Values.service.prometheus.port }}{{ end }}
