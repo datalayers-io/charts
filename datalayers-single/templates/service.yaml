@@ -15,5 +15,23 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if .Values.service.postgres.enabled }}
+    - port: {{ .Values.service.postgres.port }}
+      targetPort: postgres
+      protocol: TCP
+      name: postgres
+    {{- end }}
+    {{- if .Values.service.redis.enabled }}
+    - port: {{ .Values.service.redis.port }}
+      targetPort: redis
+      protocol: TCP
+      name: redis
+    {{- end }}
+    {{- if .Values.service.prometheus.enabled }}
+    - port: {{ .Values.service.prometheus.port }}
+      targetPort: prometheus
+      protocol: TCP
+      name: prometheus
+    {{- end }}
   selector:
     {{- include "datalayers-single.selectorLabels" . | nindent 4 }}

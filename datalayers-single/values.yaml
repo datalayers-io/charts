@@ -53,6 +53,15 @@ service:
     port: 8360
   http:
     port: 8361
+  postgres:
+    enabled: false
+    port: 5432
+  redis:
+    enabled: false
+    port: 6379
+  prometheus:
+    enabled: false
+    port: 9090
 
 ingress:
   enabled: false
